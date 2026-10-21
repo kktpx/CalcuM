@@ -31,7 +31,7 @@ export function AuthScreen() {
       } else {
         const result = await signUp(check.email, password);
         setError(result.error);
-        if (result.needsConfirmation) setNotice('Check your email to confirm your account.');
+        if (result.needsConfirmation) setNotice('If this email is new, check your inbox to confirm your account.');
       }
     } finally {
       setBusy(false);

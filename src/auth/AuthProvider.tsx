@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { AppState } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { friendlyAuthError } from '../lib/authErrors';
 
 interface AuthContextValue {
   session: Session | null;
@@ -13,22 +14,16 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function friendlyError(message: string): string {
-  if (/invalid login credentials/i.test(message)) return 'Incorrect email or password.';
-  if (/already registered/i.test(message)) return 'This email is already registered. Try signing in.';
-  if (/network|fetch/i.test(message)) return 'Network error. Check your connection and try again.';
-  return 'Something went wrong. Please try again.';
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => setSession(data.session))
+      .catch(() => setSession(null))
+      .finally(() => setLoading(false));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
       setLoading(false);
@@ -47,12 +42,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return error ? friendlyError(error.message) : null;
+    return error ? friendlyAuthError(error.message) : null;
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return { error: friendlyError(error.message), needsConfirmation: false };
+    if (error) return { error: friendlyAuthError(error.message), needsConfirmation: false };
     return { error: null, needsConfirmation: !data.session };
   }, []);
 

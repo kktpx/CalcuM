@@ -1,7 +1,8 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabase';
-import { DEFAULT_PROFILE, Profile, profileFromRow } from '../lib/profile';
+import { Profile } from '../lib/profile';
+import { initialProfileState, profileReducer } from '../lib/profileState';
 import type { ProfilePatch } from '../lib/validation';
 
 interface ProfileContextValue {
@@ -17,51 +18,41 @@ const ProfileContext = createContext<ProfileContextValue | null>(null);
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const userId = session?.user.id ?? null;
-  const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE);
-  const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(profileReducer, initialProfileState);
 
+  // Results are tagged with the userId they were requested for; the reducer drops
+  // any that no longer match the current user.
   const reload = useCallback(async () => {
-    if (!userId) {
-      setProfile(DEFAULT_PROFILE);
-      setLoadError(null);
-      return;
-    }
-    setLoading(true);
+    if (!userId) return;
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-    if (error) {
-      setLoadError('Could not load your profile.');
-      setProfile(DEFAULT_PROFILE);
-    } else {
-      setLoadError(null);
-      setProfile(profileFromRow(data));
-    }
-    setLoading(false);
+    if (error) dispatch({ type: 'failed', userId });
+    else dispatch({ type: 'loaded', userId, row: data });
   }, [userId]);
 
   useEffect(() => {
+    dispatch({ type: 'user', userId });
     reload();
-  }, [reload]);
+  }, [userId, reload]);
 
   const updateProfile = useCallback(
     async (patch: ProfilePatch) => {
       if (!userId) return 'You are signed out.';
+      // upsert so a user whose profile row is missing can still save
       const { data, error } = await supabase
         .from('profiles')
-        .update(patch)
-        .eq('id', userId)
+        .upsert({ id: userId, ...patch })
         .select()
         .maybeSingle();
       if (error || !data) return 'Could not save your profile. Please try again.';
-      setProfile(profileFromRow(data));
+      dispatch({ type: 'saved', userId, row: data });
       return null;
     },
     [userId]
   );
 
   const value = useMemo(
-    () => ({ profile, loading, loadError, reload, updateProfile }),
-    [profile, loading, loadError, reload, updateProfile]
+    () => ({ profile: state.profile, loading: state.loading, loadError: state.loadError, reload, updateProfile }),
+    [state.profile, state.loading, state.loadError, reload, updateProfile]
   );
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 }
