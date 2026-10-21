@@ -1,55 +1,103 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CalcuColors } from '../theme/theme';
-import { mockScanResult } from '../data/mockData';
+import { analyzeFood } from '../lib/api';
+import { MEAL_TYPES, MealType, ScanResult, defaultMealType } from '../lib/nutrition';
 
 interface QuickScanProps {
-  onAddMeal: (meal: any) => void;
+  /** Resolves to an error message, or null when the meal was saved. */
+  onAddMeal: (type: MealType, item: ScanResult) => Promise<string | null>;
 }
+
+const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
+  mediaTypes: ['images'],
+  base64: true,
+  quality: 0.5,
+  allowsEditing: false,
+};
 
 export function QuickScan({ onAddMeal }: QuickScanProps) {
   const [isScanning, setIsScanning] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [mealType, setMealType] = useState<MealType>(defaultMealType());
+  const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  const analyze = async (picked: ImagePicker.ImagePickerResult) => {
+    if (picked.canceled) return;
+    const asset = picked.assets[0];
+    if (!asset?.base64) {
+      setError('Could not read that photo. Please try another one.');
+      return;
+    }
+    setIsScanning(true);
+    try {
+      const res = await analyzeFood(asset.base64, asset.mimeType ?? 'image/jpeg');
+      if (res.ok) {
+        setResult(res.data);
+        setMealType(defaultMealType());
+      } else {
+        setError(res.error);
+      }
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const fromCamera = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      setError('Camera access is off. Enable it in Settings, or choose a photo from your library.');
+      return;
+    }
+    await analyze(await ImagePicker.launchCameraAsync(PICKER_OPTIONS));
+  };
+
+  const fromLibrary = async () => {
+    await analyze(await ImagePicker.launchImageLibraryAsync(PICKER_OPTIONS));
+  };
 
   const handlePress = () => {
-    setIsScanning(true);
+    setError(null);
     setResult(null);
-    
-    // Simulate analyzing process
-    setTimeout(() => {
-      setIsScanning(false);
-      setResult(mockScanResult);
-    }, 1800);
+    Alert.alert('Quick Scan', 'Add a photo of your food', [
+      { text: 'Take photo', onPress: fromCamera },
+      { text: 'Choose from library', onPress: fromLibrary },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const handleClose = () => {
     setResult(null);
   };
 
-  const handleAdd = () => {
-    onAddMeal({
-      id: Date.now().toString(),
-      type: 'Snack',
-      name: result.name,
-      calories: result.calories,
-      protein: result.protein,
-      carbs: result.carbs,
-      fat: result.fat,
-    });
-    setResult(null);
+  const handleAdd = async () => {
+    if (!result || adding) return;
+    setAdding(true);
+    try {
+      const err = await onAddMeal(mealType, result);
+      if (err) setError(err);
+      else {
+        setError(null);
+        setResult(null);
+      }
+    } finally {
+      setAdding(false);
+    }
   };
 
   if (result) {
     return (
       <View style={styles.resultCard}>
         <View style={styles.resultHeader}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.resultName}>{result.name}</Text>
             <Text style={styles.resultServing}>{result.servingSize}</Text>
           </View>
-          <TouchableOpacity onPress={handleClose}>
+          <TouchableOpacity onPress={handleClose} accessibilityLabel="Dismiss scan result">
             <MaterialCommunityIcons name="close" size={24} color={CalcuColors.textMuted} />
           </TouchableOpacity>
         </View>
@@ -73,42 +121,95 @@ export function QuickScan({ onAddMeal }: QuickScanProps) {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-          <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
-          <Text style={styles.addButtonText}>Add to Foods</Text>
+        <View style={styles.typeRow}>
+          {MEAL_TYPES.map((t) => (
+            <TouchableOpacity
+              key={t}
+              onPress={() => setMealType(t)}
+              style={[styles.typeChip, mealType === t && styles.typeChipActive]}
+            >
+              <Text style={[styles.typeChipText, mealType === t && styles.typeChipTextActive]}>{t}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        <TouchableOpacity style={[styles.addButton, adding && { opacity: 0.6 }]} onPress={handleAdd} disabled={adding}>
+          {adding ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <>
+              <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
+              <Text style={styles.addButtonText}>Add to {mealType}</Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <TouchableOpacity onPress={handlePress} disabled={isScanning} style={styles.container}>
-      <LinearGradient
-        colors={[CalcuColors.gradientStart, CalcuColors.gradientEnd]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
-      >
-        {isScanning ? (
-          <View style={styles.contentRow}>
-            <ActivityIndicator color="#FFFFFF" size="large" style={{ marginRight: 8 }} />
-            <Text style={styles.titleText}>Analyzing...</Text>
-          </View>
-        ) : (
-          <View style={styles.contentRow}>
-            <MaterialCommunityIcons name="camera" size={24} color="#FFFFFF" />
-            <View style={styles.textCol}>
-              <Text style={styles.titleText}>Quick Scan</Text>
-              <Text style={styles.subtitleText}>Upload a food photo</Text>
+    <View>
+      <TouchableOpacity onPress={handlePress} disabled={isScanning} style={styles.container}>
+        <LinearGradient
+          colors={[CalcuColors.gradientStart, CalcuColors.gradientEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.gradient}
+        >
+          {isScanning ? (
+            <View style={styles.contentRow}>
+              <ActivityIndicator color="#FFFFFF" size="large" style={{ marginRight: 8 }} />
+              <Text style={styles.titleText}>Analyzing...</Text>
             </View>
-          </View>
-        )}
-      </LinearGradient>
-    </TouchableOpacity>
+          ) : (
+            <View style={styles.contentRow}>
+              <MaterialCommunityIcons name="camera" size={24} color="#FFFFFF" />
+              <View style={styles.textCol}>
+                <Text style={styles.titleText}>Quick Scan</Text>
+                <Text style={styles.subtitleText}>Upload a food photo</Text>
+              </View>
+            </View>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+      {error && <Text style={[styles.errorText, { marginHorizontal: 16, marginTop: 8 }]}>{error}</Text>}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  typeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  typeChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: CalcuColors.borderMedium,
+  },
+  typeChipActive: {
+    backgroundColor: CalcuColors.teal,
+    borderColor: CalcuColors.teal,
+  },
+  typeChipText: {
+    fontSize: 13,
+    color: CalcuColors.textSecondary,
+  },
+  typeChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 13,
+    marginBottom: 12,
+  },
   container: {
     marginHorizontal: 16,
     borderRadius: 16,

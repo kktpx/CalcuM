@@ -11,7 +11,8 @@ import { CalcuAppbar } from './src/components/CalcuAppbar';
 import { BottomTabBar } from './src/components/BottomTabBar';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
-import { PlaceholderScreen } from './src/screens/PlaceholderScreen';
+import { FoodsScreen } from './src/screens/FoodsScreen';
+import { WeightScreen } from './src/screens/WeightScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { useKeyboardVisible } from './src/hooks/useKeyboardVisible';
 
@@ -35,9 +36,9 @@ function Root() {
   const renderScreen = () => {
     switch (activeTab) {
       case 'foods':
-        return <PlaceholderScreen title="Foods" icon="silverware-fork-knife" />;
+        return <FoodsScreen />;
       case 'weight':
-        return <PlaceholderScreen title="Weight Tracker" icon="scale-bathroom" />;
+        return <WeightScreen />;
       case 'profile':
         return <ProfileScreen />;
       case 'home':
@@ -48,7 +49,7 @@ function Root() {
 
   return (
     <>
-      <CalcuAppbar />
+      <CalcuAppbar onProfilePress={() => setActiveTab('profile')} />
       <View style={styles.mainContent}>{renderScreen()}</View>
       {!keyboardVisible && <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />}
     </>

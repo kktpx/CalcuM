@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Appbar, Avatar, Badge } from 'react-native-paper';
+import { Appbar, Avatar } from 'react-native-paper';
 import { CalcuColors } from '../theme/theme';
-import { mockNotificationCount } from '../data/mockData';
 import { useProfile } from '../hooks/useProfile';
 import { initialsOf } from '../lib/profile';
 
-export function CalcuAppbar() {
+interface CalcuAppbarProps {
+  onProfilePress: () => void;
+}
+
+export function CalcuAppbar({ onProfilePress }: CalcuAppbarProps) {
   const { profile } = useProfile();
   return (
     <Appbar.Header style={styles.header} mode="small" elevated={true}>
@@ -16,24 +19,10 @@ export function CalcuAppbar() {
       />
       
       <View style={styles.actionContainer}>
-        <View style={styles.bellWrapper}>
-          <Appbar.Action 
-            icon="bell-outline" 
-            color={CalcuColors.textPrimary}
-            onPress={() => console.log("Notifications clicked")} 
-          />
-          <Badge 
-            visible={mockNotificationCount > 0} 
-            size={18} 
-            style={styles.badge}
-          >
-            {mockNotificationCount}
-          </Badge>
-        </View>
-
         <TouchableOpacity 
           style={styles.avatarWrapper}
-          onPress={() => console.log("Profile clicked")}
+          onPress={onProfilePress}
+          accessibilityLabel="Open profile"
         >
           <Avatar.Text 
             size={40} 
@@ -66,18 +55,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: 8,
-  },
-  bellWrapper: {
-    position: 'relative',
-    marginRight: 8,
-  },
-  badge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: '#EF4444',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
   },
   avatarWrapper: {
     marginRight: 8,
