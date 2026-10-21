@@ -2,9 +2,12 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Appbar, Avatar, Badge } from 'react-native-paper';
 import { CalcuColors } from '../theme/theme';
-import { mockUser, mockNotificationCount } from '../data/mockData';
+import { mockNotificationCount } from '../data/mockData';
+import { useProfile } from '../hooks/useProfile';
+import { initialsOf } from '../lib/profile';
 
 export function CalcuAppbar() {
+  const { profile } = useProfile();
   return (
     <Appbar.Header style={styles.header} mode="small" elevated={true}>
       <Appbar.Content 
@@ -34,7 +37,7 @@ export function CalcuAppbar() {
         >
           <Avatar.Text 
             size={40} 
-            label={mockUser.initials} 
+            label={initialsOf(profile.displayName)}
             style={styles.avatar}
             color="#FFFFFF"
           />

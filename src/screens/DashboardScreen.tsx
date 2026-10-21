@@ -5,8 +5,9 @@ import { QuickScan } from '../components/QuickScan';
 import { CalorieRing } from '../components/CalorieRing';
 import { MacroCard } from '../components/MacroCard';
 import { MealList } from '../components/MealList';
-import { mockTargets, mockConsumed, mockMeals, Meal } from '../data/mockData';
+import { mockConsumed, mockMeals, Meal } from '../data/mockData';
 import { CalcuColors } from '../theme/theme';
+import { useProfile } from '../hooks/useProfile';
 
 // Intake not covered by the initially logged meals; totals = base + current meals
 const sumInitial = (key: 'calories' | 'protein' | 'carbs' | 'fat') =>
@@ -19,6 +20,13 @@ const baseConsumed = {
 };
 
 export function DashboardScreen() {
+  const { profile } = useProfile();
+  const targets = {
+    calories: profile.calorieTarget,
+    protein: profile.proteinTarget,
+    carbs: profile.carbsTarget,
+    fat: profile.fatTarget,
+  };
   const [bannerVisible, setBannerVisible] = useState(true);
   const [meals, setMeals] = useState(mockMeals);
   
@@ -48,7 +56,7 @@ export function DashboardScreen() {
       showsVerticalScrollIndicator={false}
     >
       <DailyGoalBanner 
-        remaining={Math.max(0, mockTargets.calories - currentConsumed)} 
+        remaining={Math.max(0, targets.calories - currentConsumed)} 
         visible={bannerVisible}
         onDismiss={() => setBannerVisible(false)}
       />
@@ -57,13 +65,13 @@ export function DashboardScreen() {
       
       <CalorieRing 
         consumed={currentConsumed} 
-        target={mockTargets.calories} 
+        target={targets.calories} 
       />
       
       <MacroCard 
-        protein={{ consumed: currentProtein, target: mockTargets.protein }}
-        carbs={{ consumed: currentCarbs, target: mockTargets.carbs }}
-        fat={{ consumed: currentFat, target: mockTargets.fat }}
+        protein={{ consumed: currentProtein, target: targets.protein }}
+        carbs={{ consumed: currentCarbs, target: targets.carbs }}
+        fat={{ consumed: currentFat, target: targets.fat }}
       />
       
       <MealList meals={meals} />
