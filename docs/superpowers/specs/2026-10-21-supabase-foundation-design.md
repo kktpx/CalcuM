@@ -9,7 +9,7 @@ CalcuM is an Expo / React Native (react-native-paper) calorie tracker. Everythin
 1. **Foundation** (this spec): auth + profile + health targets
 2. Meals + Home
 3. Foods + Weight
-4. Real Quick Scan (Storage + Edge Function + AI)
+4. Real Quick Scan (Storage + Edge Function + AI). Decision: use the **Gemini API** for food-photo analysis, called from a Supabase Edge Function so the Gemini key stays server-side (stored as a Supabase secret, never in the app). Details are designed in that sub-project's own spec.
 
 ## Goal and success criteria
 
