@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { CalcuColors } from '../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -12,9 +12,17 @@ interface Meal {
 
 interface MealListProps {
   meals: Meal[];
+  onDelete?: (id: string) => void;
 }
 
-export function MealList({ meals }: MealListProps) {
+export function MealList({ meals, onDelete }: MealListProps) {
+  const confirmDelete = (meal: Meal) => {
+    Alert.alert('Delete meal', `Remove "${meal.name}" from today?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => onDelete?.(meal.id) },
+    ]);
+  };
+
   const getIconForType = (type: string) => {
     switch (type.toLowerCase()) {
       case 'breakfast': return 'egg-fried';
@@ -50,6 +58,15 @@ export function MealList({ meals }: MealListProps) {
                 </View>
                 
                 <Text style={styles.mealCalories}>{meal.calories} kcal</Text>
+                {onDelete && (
+                  <TouchableOpacity
+                    onPress={() => confirmDelete(meal)}
+                    accessibilityLabel={`Delete ${meal.name}`}
+                    style={styles.deleteButton}
+                  >
+                    <MaterialCommunityIcons name="trash-can-outline" size={20} color={CalcuColors.textMuted} />
+                  </TouchableOpacity>
+                )}
               </View>
               
               {index < meals.length - 1 && <View style={styles.divider} />}
@@ -120,6 +137,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: CalcuColors.textPrimary,
+  },
+  deleteButton: {
+    marginLeft: 12,
+    padding: 4,
   },
   divider: {
     height: 1,
