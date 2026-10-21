@@ -8,6 +8,7 @@ import type { ProfilePatch } from '../lib/validation';
 interface ProfileContextValue {
   profile: Profile;
   loading: boolean;
+  loaded: boolean;
   loadError: string | null;
   reload(): Promise<void>;
   updateProfile(patch: ProfilePatch): Promise<string | null>;
@@ -51,8 +52,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ profile: state.profile, loading: state.loading, loadError: state.loadError, reload, updateProfile }),
-    [state.profile, state.loading, state.loadError, reload, updateProfile]
+    () => ({ profile: state.profile, loading: state.loading, loaded: state.loaded, loadError: state.loadError, reload, updateProfile }),
+    [state.profile, state.loading, state.loaded, state.loadError, reload, updateProfile]
   );
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 }

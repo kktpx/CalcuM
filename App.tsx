@@ -13,10 +13,12 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { PlaceholderScreen } from './src/screens/PlaceholderScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
+import { useKeyboardVisible } from './src/hooks/useKeyboardVisible';
 
 function Root() {
   const { session, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
+  const keyboardVisible = useKeyboardVisible();
 
   if (loading) {
     return (
@@ -48,7 +50,7 @@ function Root() {
     <>
       <CalcuAppbar />
       <View style={styles.mainContent}>{renderScreen()}</View>
-      <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+      {!keyboardVisible && <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />}
     </>
   );
 }

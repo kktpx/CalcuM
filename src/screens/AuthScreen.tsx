@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, HelperText, TextInput } from 'react-native-paper';
 import { useAuth } from '../auth/AuthProvider';
 import { validateCredentials } from '../lib/validation';
@@ -41,14 +41,12 @@ export function AuthScreen() {
   const isSignIn = mode === 'signIn';
 
   return (
-    <KeyboardAvoidingView
+    <ScrollView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
     >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
         <Text style={styles.brand}>Calcu</Text>
         <Text style={styles.subtitle}>{isSignIn ? 'Sign in to continue' : 'Create your account'}</Text>
 
@@ -98,8 +96,7 @@ export function AuthScreen() {
             {isSignIn ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </Button>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </ScrollView>
   );
 }
 

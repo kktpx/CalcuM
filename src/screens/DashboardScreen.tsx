@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
+import { useTabBarInset } from '../components/BottomTabBar';
 import { DailyGoalBanner } from '../components/DailyGoalBanner';
 import { QuickScan } from '../components/QuickScan';
 import { CalorieRing } from '../components/CalorieRing';
@@ -20,7 +22,8 @@ const baseConsumed = {
 };
 
 export function DashboardScreen() {
-  const { profile } = useProfile();
+  const { profile, loaded, loadError } = useProfile();
+  const bottomInset = useTabBarInset();
   const targets = {
     calories: profile.calorieTarget,
     protein: profile.proteinTarget,
@@ -49,10 +52,19 @@ export function DashboardScreen() {
     setMeals((prev) => [...prev, newMeal]);
   };
 
+  // Hold the screen until the real targets arrive so wrong numbers never flash.
+  if (!loaded && !loadError) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={CalcuColors.teal} size="large" />
+      </View>
+    );
+  }
+
   return (
     <ScrollView 
       style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+      contentContainerStyle={[styles.contentContainer, { paddingBottom: bottomInset }]}
       showsVerticalScrollIndicator={false}
     >
       <DailyGoalBanner 
@@ -84,7 +96,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: CalcuColors.background,
   },
-  contentContainer: {
-    paddingBottom: 100, // Safe padding for Bottom Tab
+  contentContainer: {},
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: CalcuColors.background,
   },
 });

@@ -9,6 +9,15 @@ interface BottomTabBarProps {
   onTabChange: (tab: string) => void;
 }
 
+// Approximate height of the tab bar content (icon + label + top padding).
+const TAB_BAR_CONTENT_HEIGHT = 56;
+
+/** Space scrollable screens must leave at the bottom so the absolute tab bar never covers content. */
+export function useTabBarInset(): number {
+  const insets = useSafeAreaInsets();
+  return TAB_BAR_CONTENT_HEIGHT + Math.max(insets.bottom, 12) + 16;
+}
+
 export function BottomTabBar({ activeTab, onTabChange }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
