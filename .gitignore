@@ -41,3 +41,8 @@ yarn-error.*
 
 # local env (secrets)
 .env
+
+# Claude Code / agent instructions (local only)
+.claude/
+CLAUDE.md
+AGENTS.md
