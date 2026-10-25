@@ -22,7 +22,15 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CalcuM uses your photos to estimate the nutrition of your food.",
+          "cameraPermission": "CalcuM uses the camera to estimate the nutrition of your food."
+        }
+      ]
     ]
   }
 }
