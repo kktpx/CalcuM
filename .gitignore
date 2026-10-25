@@ -46,3 +46,8 @@ yarn-error.*
 .claude/
 CLAUDE.md
 AGENTS.md
+.superpowers/
+docs/superpowers/
+.mcp.json
+.claude.json
+CLAUDE.local.md
